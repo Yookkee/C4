@@ -16,7 +16,7 @@ public:
 	int Print_Int_List();
 	int Set_Curr_Dev(std::string name);
 
-	pcap_t * Listen_arp(std::map<std::string, std::string> & mac_ip );
+	pcap_t * Listen_ARP(std::map<std::string, std::string> & mac_ip );
 	void Free_Devices();
 private:
 	char errbuf[PCAP_ERRBUF_SIZE];

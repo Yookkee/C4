@@ -33,7 +33,7 @@ void main(int argc, char* argv[])
 
 	C4_wpcap C4W;
 	C4W.Get_Int_List();
-	C4W.Print_Int_List();
+	//C4W.Print_Int_List();
 	C4W.Set_Curr_Dev(getIntName(current));
-	C4W.Listen_arp(mac_ip);
+	C4W.Listen_ARP(mac_ip);
 }

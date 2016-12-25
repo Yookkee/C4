@@ -18,13 +18,13 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C4_wpcap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Unapplied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="converter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C4_wpcap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

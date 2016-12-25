@@ -67,19 +67,20 @@ int C4_wpcap::Set_Curr_Dev(std::string name)
 	return -1;
 }
 
-pcap_t * C4_wpcap::Listen_arp(std::map<std::string, std::string> & mac_ip)
+pcap_t * C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
 {
 	if (!curr_dev)
 	{
 		std::cout << "Choose Current Device before" << std::endl;
 		return 0;
 	}
+
 	pcap_t * adhandle;
 	/* Open the device */
 	if ((adhandle = pcap_open(curr_dev->name,          // name of the device
 		65536,            // portion of the packet to capture. 
 		// 65536 guarantees that the whole packet will be captured on all the link layers
-		PCAP_OPENFLAG_MAX_RESPONSIVENESS,    // promiscuous mode
+		PCAP_OPENFLAG_NOCAPTURE_LOCAL,    // promiscuous mode
 		1000,             // read timeout
 		NULL,             // authentication on the remote machine
 		errbuf            // error buffer
@@ -94,15 +95,21 @@ pcap_t * C4_wpcap::Listen_arp(std::map<std::string, std::string> & mac_ip)
 	// Create Network mask
 	//--------------------
 
-	DWORD netmask;
-	if (curr_dev->addresses != NULL)
-		/* Retrieve the mask of the first address of the interface */
-		netmask = ((struct sockaddr_in *)(curr_dev->addresses->netmask))->sin_addr.S_un.S_addr;
-	else
-		/* If the interface is without an address we suppose to be in a C class network */
-		netmask = 0xffffff;
+	pcap_addr_t *a;
+	DWORD netmask = 0;
 
-	netmask = 0xffffff;
+	for (a = curr_dev->addresses; a && !netmask; a = a->next) 
+	{
+		switch (a->addr->sa_family)
+		{
+		case AF_INET:
+			netmask = ((struct sockaddr_in *)a->netmask)->sin_addr.s_addr;
+			break;
+		}
+	}
+
+	if (!netmask)
+		netmask = 0xffffff;
 
 	//--------------------
 	// Compile filter
@@ -133,6 +140,9 @@ pcap_t * C4_wpcap::Listen_arp(std::map<std::string, std::string> & mac_ip)
 	// Capturing
 	//--------------------
 
+	std::cout << "Capturing ARP replies" << std::endl;
+	std::cout << "MAC - IP" << std::endl;
+
 	struct pcap_pkthdr *header;
 	const u_char *pkt_data;
 	int res;
@@ -146,16 +156,14 @@ pcap_t * C4_wpcap::Listen_arp(std::map<std::string, std::string> & mac_ip)
 		// check for response
 		// 1 - request
 		// 2 - reply
-		std::cout << "opcode " << (int)*(pkt_data + 21) << std::endl;
 		if (*(pkt_data + 21) == 2)
 		{
 			// get mac and ip from packet data
 			std::string mac = conv_mac_bytes_to_str((unsigned char *)(pkt_data + 22));
 			std::string ip = conv_ip4_bytes_to_str((unsigned char *)(pkt_data + 28));
 
-			mac_ip.insert(std::make_pair(mac, ip));
-
-			std::cout << mac << " " << ip << std::endl;
+			if (mac_ip.insert(std::make_pair(mac, ip)).second == true)
+				std::cout << mac << " " << ip << std::endl;
 		}
 	}
 }
