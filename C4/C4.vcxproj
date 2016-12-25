@@ -83,11 +83,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="C4_wpcap.cpp" />
+    <ClCompile Include="converter.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Unapplied.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C4_wpcap.hpp" />
-    <ClInclude Include="Unapplied.h" />
+    <ClInclude Include="converter.hpp" />
+    <ClInclude Include="Unapplied.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -21,12 +21,21 @@
     <ClCompile Include="C4_wpcap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Unapplied.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="converter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Unapplied.h">
+    <ClInclude Include="C4_wpcap.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C4_wpcap.hpp">
+    <ClInclude Include="Unapplied.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="converter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
