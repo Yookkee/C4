@@ -45,3 +45,21 @@ int fix_netmask(unsigned int netmask)
 
 	return res;
 }
+
+void conv_ip4_str_to_bytes(const std::string & ipv4, BYTE * const arr)
+{
+	int i = 0;
+	for (int j = 0; j < 4; ++j)
+	{
+		std::string tmp = "";
+		char c;
+		while ((c = ipv4.c_str()[i]) != '.' && c != '\0')
+		{
+			tmp += c;
+			i++;
+		}
+
+		arr[j] = atoi(tmp.c_str());
+		i++;
+	}
+}

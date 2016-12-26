@@ -6,6 +6,11 @@
 // include pcap.h last
 #include "pcap.h"
 
+typedef unsigned char BYTE;
+
+#define C4_PACKET_MAX_LEN 65536
+#define C4_PACKET_SEND_LEN 100
+
 class C4_wpcap
 {
 public:
@@ -17,11 +22,13 @@ public:
 	// Check if current device is open
 	bool Is_Open();
 	// Open device with specific options
-	pcap_t * Open_Device();
+	int Open_Device(const int pack_len, const int flag);
 	// Create filter
 	int Filter_Create(std::string filter, int netmask);
 	// Run arp replies listener
-	pcap_t * Listen_ARP(std::map<std::string, std::string> & mac_ip);
+	int Listen_ARP(std::map<std::string, std::string> & mac_ip);
+	// Arp request sender
+	int ARP_Sender(BYTE * mac, BYTE * ip, const unsigned int netmask);
 
 private:
 	int Get_Int_List();

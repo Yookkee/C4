@@ -1,6 +1,11 @@
 #include "C4_wpcap.hpp"
 #include <iostream>
 #include "converter.hpp"
+#include "C4_packet_creator.hpp"
+#include <vector>
+#include "Unapplied.hpp"
+#include <Winsock2.h>
+
 
 C4_wpcap::C4_wpcap(const std::string & name)
 : alldevs(0), alldevs_count(0), curr_dev(0), open_dev(0)
@@ -31,6 +36,8 @@ int C4_wpcap::Get_Int_List()
 	// Count interfaces
 	pcap_if_t *d;
 	for (d = alldevs, alldevs_count = 0; d; alldevs_count++, d = d->next);
+
+	return 0;
 }
 
 int C4_wpcap::Print_Int_List()
@@ -79,16 +86,13 @@ int C4_wpcap::Set_Curr_Dev(const std::string & name)
 
 //--------------------------
 
-pcap_t * C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
+int C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
 {
-	if (!curr_dev)
+	if (!Is_Open())
 	{
-		std::cout << "Choose Current Device before" << std::endl;
-		return 0;
+		std::cout << "Interface is not open" << std::endl;
+		return 1;
 	}
-
-	Open_Device();
-
 	//--------------------
 	// Create Network mask
 	//--------------------
@@ -102,7 +106,7 @@ pcap_t * C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
 
 	int status = Filter_Create("arp", netmask);
 	if (status)
-		return 0;
+		return 1;
 
 	//--------------------
 	// Capturing
@@ -115,7 +119,9 @@ pcap_t * C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
 	const u_char *pkt_data;
 	int res;
 	/* Retrieve the packets */
-	while ((res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
+	clock_t t = clock();
+	//Listen for 5 seconds
+	while (clock() - t < 5000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
 
 		if (res == 0)
 			/* Timeout elapsed */
@@ -134,6 +140,8 @@ pcap_t * C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
 				std::cout << mac << " " << ip << std::endl;
 		}
 	}
+
+	return 0;
 }
 
 void C4_wpcap::Free_Devices()
@@ -192,13 +200,13 @@ int C4_wpcap::Filter_Create(std::string filter, int netmask)
 	return 0;
 }
 
-pcap_t * C4_wpcap::Open_Device()
+int C4_wpcap::Open_Device(const int pack_len, const int flag)
 {
 	/* Open the device */
 	if ((open_dev = pcap_open(curr_dev->name,          // name of the device
-		65536,            // portion of the packet to capture. 
+		pack_len,            // portion of the packet to capture. 
 		// 65536 guarantees that the whole packet will be captured on all the link layers
-		PCAP_OPENFLAG_NOCAPTURE_LOCAL,    // promiscuous mode
+		flag,    // promiscuous mode
 		1000,             // read timeout
 		NULL,             // authentication on the remote machine
 		errbuf            // error buffer
@@ -206,13 +214,53 @@ pcap_t * C4_wpcap::Open_Device()
 	{
 		fprintf(stderr, "\nUnable to open the adapter. %s is not supported by WinPcap\n", curr_dev->name);
 		printf("\nUnable to open the adapter. %s\n", pcap_geterr(open_dev));
-		return 0;
+		return 1;
 	}
 
-	return open_dev;
+	return 0;
 }
 
 bool C4_wpcap::Is_Open()
 {
 	return open_dev != 0;
+}
+
+int C4_wpcap::ARP_Sender(BYTE * mac, BYTE * ip, const unsigned int netmask)
+{
+	ARP_PACKET raw(mac, ip);
+	BYTE * bytes = (BYTE *)&raw;
+
+	int wildmask = 0xffffffff ^ netmask;
+
+	BYTE arr[4] = { ip[3], ip[2], ip[1], ip[0] };
+	unsigned int my_ip = *(int*)arr;
+
+	unsigned int intface_addr = netmask & my_ip;
+	intface_addr++;
+	for (int i = 0; i < wildmask - 1; ++i)
+	{
+		arr[0] = *(((BYTE*)&intface_addr) + 3);
+		arr[1] = *(((BYTE*)&intface_addr) + 2);
+		arr[2] = *(((BYTE*)&intface_addr) + 1);
+		arr[3] = *(((BYTE*)&intface_addr) + 0);
+
+		memcpy(&bytes[38], arr, 4);
+
+		/*for (int j = 0; j < sizeof(ARP_PACKET); ++j)
+		{
+			printf("%x ", bytes[j]);
+		}*/
+
+		if (pcap_sendpacket(open_dev, bytes, sizeof(ARP_PACKET) /* size */) != 0)
+		{
+			fprintf(stderr, "\nError sending the packet: %s\n", pcap_geterr(open_dev));
+			return 1;
+		}
+
+		intface_addr++;
+	}
+
+
+
+	return 0;
 }
