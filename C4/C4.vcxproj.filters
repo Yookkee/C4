@@ -27,6 +27,9 @@
     <ClCompile Include="C4_wpcap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C4_packet_creator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C4_wpcap.hpp">
@@ -36,6 +39,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="converter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C4_packet_creator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -48,3 +48,5 @@ std::string getMAC(int number);
 void getInterfacesList();
 
 std::string getIntName(int num);
+
+struct Adapter * getInt(int idx);

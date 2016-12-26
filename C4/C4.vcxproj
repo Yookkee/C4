@@ -82,12 +82,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="C4_packet_creator.cpp" />
     <ClCompile Include="C4_wpcap.cpp" />
     <ClCompile Include="converter.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Unapplied.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="C4_packet_creator.hpp" />
     <ClInclude Include="C4_wpcap.hpp" />
     <ClInclude Include="converter.hpp" />
     <ClInclude Include="Unapplied.hpp" />

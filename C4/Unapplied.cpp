@@ -1,4 +1,4 @@
-#define _CRT_SECURE_NO_WARNINGS
+// #define _CRT_SECURE_NO_WARNINGS
 #include "Unapplied.hpp"
 
 
@@ -106,4 +106,9 @@ void getInterfacesList()
 std::string getIntName(int num)
 {
 	return Interfaces[num].AdapterName;
+}
+
+struct Adapter * getInt(int idx)
+{
+	return &Interfaces[idx];
 }

@@ -1,5 +1,6 @@
 #include "Unapplied.hpp"
 #include "C4_wpcap.hpp"
+#include "converter.hpp"
 
 extern std::vector <Adapter> Interfaces;
 std::map<std::string, std::string> mac_ip;
@@ -31,9 +32,6 @@ void main(int argc, char* argv[])
 	// Test C4_wpcap
 	//--------------
 
-	C4_wpcap C4W;
-	C4W.Get_Int_List();
-	//C4W.Print_Int_List();
-	C4W.Set_Curr_Dev(getIntName(current));
+	C4_wpcap C4W(getInt(current)->AdapterName);
 	C4W.Listen_ARP(mac_ip);
 }
