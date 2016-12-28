@@ -1,5 +1,6 @@
 #include "C4_packet_creator.hpp"
 #include <cstring>
+#include "converter.hpp"
 
 ARP_PACKET::ARP_PACKET(const BYTE * _mac_src, const BYTE * _ip_src)
 {
@@ -36,7 +37,7 @@ TCP_PACKET::TCP_PACKET(const BYTE * _mac_dest, const BYTE * _mac_src, const BYTE
 	identification[0] = 0x41;
 	identification[1] = 0xea;
 	flags_offset[0] = 0x40;
-	ttl = 0x40;
+	ttl = 0x80;
 	protocol = 0x06;
 	head_sum[0] = 0x23;
 	head_sum[1] = 0x8e;
@@ -57,3 +58,11 @@ TCP_PACKET::TCP_PACKET(const BYTE * _mac_dest, const BYTE * _mac_src, const BYTE
 	memcpy(options, "\x02\x04\x05\xb4\x01\x03\x03\x08\x01\x01\x04\x02", 12);
 }
 
+short TCP_PACKET::Next_Port()
+{
+	short port = *(short *)reverse_bytes(dest_port, 2);
+	short tmp = ++port;
+	reverse_bytes((BYTE *)&port, 2);
+	memcpy(dest_port, (BYTE *)&port, 2);
+	return tmp;
+}

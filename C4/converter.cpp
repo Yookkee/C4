@@ -63,3 +63,41 @@ void conv_ip4_str_to_bytes(const std::string & ipv4, BYTE * const arr)
 		i++;
 	}
 }
+
+void conv_mac_str_to_bytes(const std::string & mac, BYTE * const arr)
+{
+	int i = 0;
+	for (int j = 0; j < 6; j++)
+	{
+		std::string tmp = "";
+		char c;
+		while (((c = mac.c_str()[i]) >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))
+		{
+			tmp += c;
+			i++;
+		}
+
+		arr[j] = strtol(tmp.c_str(), NULL, 16);
+		i++;
+	}
+}
+
+BYTE * reverse_bytes(BYTE * arr, size_t size)
+{
+	size_t med = size >> 1;
+
+	size_t left = med - 1;
+	size_t right = med;
+
+	for (int i = 0; i < med; i++)
+	{
+		arr[left] ^= arr[right];
+		arr[right] ^= arr[left];
+		arr[left] ^= arr[right];
+		
+		left++;
+		right++;
+	}
+
+	return arr;
+}

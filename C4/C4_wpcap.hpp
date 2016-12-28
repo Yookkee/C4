@@ -29,6 +29,8 @@ public:
 	int Listen_ARP(std::map<std::string, std::string> & mac_ip);
 	// Arp request sender
 	int ARP_Sender(BYTE * mac, BYTE * ip, const unsigned int netmask);
+	// TCP port scanner
+	int TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, const BYTE * ip_dest, const BYTE * ip_src);
 
 private:
 	int Get_Int_List();

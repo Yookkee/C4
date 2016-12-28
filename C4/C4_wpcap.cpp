@@ -121,7 +121,7 @@ int C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
 	/* Retrieve the packets */
 	clock_t t = clock();
 	//Listen for 5 seconds
-	while (clock() - t < 5000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
+	while (clock() - t < 3000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
 
 		if (res == 0)
 			/* Timeout elapsed */
@@ -246,11 +246,6 @@ int C4_wpcap::ARP_Sender(BYTE * mac, BYTE * ip, const unsigned int netmask)
 
 		memcpy(&bytes[38], arr, 4);
 
-		/*for (int j = 0; j < sizeof(ARP_PACKET); ++j)
-		{
-			printf("%x ", bytes[j]);
-		}*/
-
 		if (pcap_sendpacket(open_dev, bytes, sizeof(ARP_PACKET) /* size */) != 0)
 		{
 			fprintf(stderr, "\nError sending the packet: %s\n", pcap_geterr(open_dev));
@@ -261,6 +256,33 @@ int C4_wpcap::ARP_Sender(BYTE * mac, BYTE * ip, const unsigned int netmask)
 	}
 
 
+
+	return 0;
+}
+
+/* need 2 addition values for port-range  */
+int C4_wpcap::TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, const BYTE * ip_dest, const BYTE * ip_src)
+{
+	TCP_PACKET raw(mac_dest, mac_src, ip_dest, ip_src); //create packet
+
+	for (int i(0); i < sizeof(TCP_PACKET); i++)
+	{
+		printf("%x ", *((BYTE*)&raw + i));
+		if ((i + 1) % 16 == 0)
+			std::cout << std::endl;
+		else if ((i + 1) % 8 == 0)
+			std::cout << "\t";
+	}
+
+	std::cout << sizeof(TCP_PACKET) << std::endl;
+	while (raw.Next_Port() < 1000)
+	{
+		if (pcap_sendpacket(open_dev, (BYTE*)&raw, sizeof(TCP_PACKET) /* size */) != 0)
+		{
+			fprintf(stderr, "\nError sending the packet: %s\n", pcap_geterr(open_dev));
+			return 1;
+		}
+	}
 
 	return 0;
 }

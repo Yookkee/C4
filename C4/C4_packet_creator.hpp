@@ -56,6 +56,7 @@ struct TCP_PACKET
 	BYTE options[12];
 
 	TCP_PACKET(const BYTE * mac_dest, const BYTE * mac_src, const BYTE * ip_dest, const BYTE * ip_src);
+	short Next_Port();
 };
 
 #endif
