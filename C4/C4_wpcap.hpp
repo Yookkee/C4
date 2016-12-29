@@ -33,6 +33,10 @@ public:
 	int TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, const BYTE * ip_dest, const BYTE * ip_src);
 	//
 	int Listen_SYNACK();
+	//
+	int DHCP_Sender(BYTE * mac);
+	//
+	int Listen_DHCP();
 
 private:
 	int Get_Int_List();

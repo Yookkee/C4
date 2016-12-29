@@ -59,4 +59,49 @@ struct TCP_PACKET
 	short Next_Port();
 };
 
+struct DHCP_PACKET
+{
+	// Ethernet
+	BYTE mac_dest[6];
+	BYTE mac_src[6];
+	BYTE type[2];
+
+	// IP
+	BYTE ver_head;
+	BYTE dif_serv_field;
+	BYTE total_length[2];
+	BYTE identification[2];
+	BYTE flags_offset[2];
+	BYTE ttl;
+	BYTE protocol;
+	BYTE head_sum[2];
+	BYTE src_ip[4];
+	BYTE dest_ip[4];
+
+	// UDP
+	BYTE src_port[2];
+	BYTE dest_port[2];
+	BYTE lenght[2];
+	BYTE udp_sum[2];
+
+	// Bootstrap
+	BYTE msg_type;
+	BYTE hard_type;
+	BYTE hard_addr_len;
+	BYTE hops;
+	BYTE transaction_id[4];
+	BYTE zeros_20[20];
+	BYTE client_mac[6];
+	BYTE zeros_202[202];
+	BYTE magic[4];
+	BYTE op_msg_type[3];
+	BYTE op_client_id[9];
+	BYTE op_req_ip[6];
+	BYTE op_param_req_list[6];
+	BYTE op_end;
+	BYTE padding[7];
+
+	DHCP_PACKET(BYTE * mac);
+};
+
 #endif

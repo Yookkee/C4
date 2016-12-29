@@ -59,9 +59,22 @@ void port_scanner(std::string & dest_mac, std::string & dest_ip)
 	delete[] macdest;
 }
 
+void dhcp_generator()
+{
+	Sleep(1000);
+	C4_wpcap C4W(getInt(current)->AdapterName);
+	C4W.Open_Device(C4_PACKET_MAX_LEN, PCAP_OPENFLAG_NOCAPTURE_LOCAL);
+
+	// getInt(current)->MAC
+
+	std::cout << "Sending DHCP..." << std::endl;
+	C4W.DHCP_Sender( getInt(current)->MAC );
+}
+
 void main(int argc, char* argv[])
 {
-	std::cout << sizeof(TCP_PACKET) << std::endl;
+	std::cout << "sizeof(DHCP_PACKET): " << sizeof(DHCP_PACKET) << ". Should be 314." << std::endl;
+
 	std::cout << "Interfaces list:" << std::endl;
 
 	getInterfacesList();
@@ -80,16 +93,25 @@ void main(int argc, char* argv[])
 	
 
 	//--------------
-	// Test C4_wpcap
+	// ARP
 	//--------------
 
-	
 	C4_wpcap C4W(getInt(current)->AdapterName);
 	C4W.Open_Device(C4_PACKET_MAX_LEN, PCAP_OPENFLAG_NOCAPTURE_LOCAL);
 	std::thread th(arp_generator);
 	std::cout << "Init Listener..." << std::endl;
 	C4W.Listen_ARP(mac_ip);
 	th.join();
+
+
+	//--------------
+	// DHCP
+	//--------------
+
+	std::thread th_dhcp(dhcp_generator);
+	std::cout << "Init Listener for DHCP..." << std::endl;
+	C4W.Listen_DHCP();
+	th_dhcp.join();
 
 
 	std::string command;

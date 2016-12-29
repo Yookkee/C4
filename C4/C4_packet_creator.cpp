@@ -70,3 +70,29 @@ short TCP_PACKET::Next_Port()
 	memcpy(dest_port, (BYTE *)&port, 2);
 	return tmp;
 }
+
+DHCP_PACKET::DHCP_PACKET(BYTE * mac)
+{
+	memset(mac_dest, 0x00, sizeof(DHCP_PACKET));
+	// Eth
+	memset(mac_dest, 0xff, 6);
+	memcpy(mac_src, mac, 6);
+	memcpy(type, "\x08\x00", 2);
+
+	// IP
+	memcpy(&ver_head, "\x45\x00\x01\x2c\xa8\x36\x00\x00", 8);
+	memcpy(&ttl, "\xfa\x11\x17\x8b\x00\x00\x00\x00\xff\xff\xff\xff", 12);
+
+	// UDP
+	memcpy(src_port, "\x00\x44\x00\x43\x01\x18\x59\x1f", 8);
+
+	// Bootstrap
+	memcpy(&msg_type, "\x01\x01\x06\x00\x00\x00\x3d\x1d", 12);
+	memcpy(client_mac, mac, 6);
+	memcpy(magic, "\x63\x82\x53\x63", 4);
+	memcpy(op_msg_type, "\x35\x01\x01\x3d", 4);
+	memcpy(op_client_id, "\x3d\x07\x01", 3);
+	memcpy(op_client_id + 3, mac, 6);
+	memcpy(op_req_ip, "\x32\x04", 2);
+	memcpy(op_param_req_list, "\x37\x04\x01\x03\x06\x2a\xff", 7);
+}

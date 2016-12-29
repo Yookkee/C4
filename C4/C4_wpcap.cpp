@@ -317,14 +317,14 @@ int C4_wpcap::TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, cons
 {
 	TCP_PACKET raw(mac_dest, mac_src, ip_dest, ip_src, 7980); //create packet
 
-	for (int i(0); i < sizeof(TCP_PACKET); i++)
+	/*for (int i(0); i < sizeof(TCP_PACKET); i++)
 	{
 		printf("%x ", *((BYTE*)&raw + i));
 		if ((i + 1) % 16 == 0)
 			std::cout << std::endl;
 		else if ((i + 1) % 8 == 0)
 			std::cout << "\t";
-	}
+	}*/
 
 	std::cout << sizeof(TCP_PACKET) << std::endl;
 	while (raw.Next_Port() < 8010)
@@ -334,6 +334,68 @@ int C4_wpcap::TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, cons
 			fprintf(stderr, "\nError sending the packet: %s\n", pcap_geterr(open_dev));
 			return 1;
 		}
+	}
+
+	return 0;
+}
+
+int C4_wpcap::DHCP_Sender(BYTE * mac)
+{
+	DHCP_PACKET raw(mac); //create packet
+	std::cout << "sent " << sizeof(DHCP_PACKET) << " bytes." << std::endl;
+	if (pcap_sendpacket(open_dev, (BYTE*)&raw, sizeof(DHCP_PACKET) /* size */) != 0)
+	{
+		fprintf(stderr, "\nError sending the packet: %s\n", pcap_geterr(open_dev));
+		return 1;
+	}
+	return 0;
+}
+
+int C4_wpcap::Listen_DHCP()
+{
+	if (!Is_Open())
+	{
+		std::cout << "Interface is not open" << std::endl;
+		return 1;
+	}
+	//--------------------
+	// Create Network mask
+	//--------------------
+
+	int netmask = Get_Network_Mask();
+
+	//--------------------
+	// Compile filter
+	// Set filter
+	//--------------------
+
+	int status = Filter_Create("port 67", netmask);
+	if (status)
+		return 1;
+
+	//--------------------
+	// Capturing
+	//--------------------
+
+	std::cout << "Capturing DHCP(Listen_DHCP)" << std::endl;
+
+	struct pcap_pkthdr *header;
+	const u_char *pkt_data;
+	int res;
+	/* Retrieve the packets */
+	clock_t t = clock();
+	//Listen for 5 seconds
+	while (clock() - t < 3000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
+
+		if (res == 0)
+			/* Timeout elapsed */
+			continue;
+
+		// src port 34 + 35
+		int serv_ip = *(int *)(pkt_data + 311);
+		reverse_bytes((BYTE *)&serv_ip, 4);
+		
+		std::cout << "DHCP server: " << conv_ip4_bytes_to_str((BYTE *)&serv_ip) << std::endl;
 	}
 
 	return 0;
