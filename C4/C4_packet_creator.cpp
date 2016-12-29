@@ -24,7 +24,7 @@ ARP_PACKET::ARP_PACKET(const BYTE * _mac_src, const BYTE * _ip_src)
 	memset(dest_ip, 0, 4);
 }
 
-TCP_PACKET::TCP_PACKET(const BYTE * _mac_dest, const BYTE * _mac_src, const BYTE * _ip_dest, const BYTE * _ip_src)
+TCP_PACKET::TCP_PACKET(const BYTE * _mac_dest, const BYTE * _mac_src, const BYTE * _ip_dest, const BYTE * _ip_src, unsigned short start_port)
 {
 	memset(mac_dest, 0, sizeof(TCP_PACKET));
 
@@ -43,6 +43,10 @@ TCP_PACKET::TCP_PACKET(const BYTE * _mac_dest, const BYTE * _mac_src, const BYTE
 	head_sum[1] = 0x8e;
 	memcpy(src_ip, _ip_src, 4);
 	memcpy(dest_ip, _ip_dest, 4);
+
+	//BYTE * port = new BYTE[2];
+	reverse_bytes((BYTE *)&start_port, 2);
+	memcpy(dest_port, &start_port, 2);
 
 	src_port[0] = 0xd2;
 	src_port[1] = 0xa2;

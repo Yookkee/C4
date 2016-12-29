@@ -55,7 +55,7 @@ struct TCP_PACKET
 	BYTE urgent_pointer[2];
 	BYTE options[12];
 
-	TCP_PACKET(const BYTE * mac_dest, const BYTE * mac_src, const BYTE * ip_dest, const BYTE * ip_src);
+	TCP_PACKET(const BYTE * mac_dest, const BYTE * mac_src, const BYTE * ip_dest, const BYTE * ip_src, unsigned short start_port);
 	short Next_Port();
 };
 
