@@ -57,6 +57,7 @@ struct TCP_PACKET
 
 	TCP_PACKET(const BYTE * mac_dest, const BYTE * mac_src, const BYTE * ip_dest, const BYTE * ip_src, unsigned short start_port);
 	short Next_Port();
+	void CALC_CHECKSUM();
 };
 
 struct DHCP_PACKET
@@ -102,6 +103,13 @@ struct DHCP_PACKET
 	BYTE padding[7];
 
 	DHCP_PACKET(BYTE * mac);
+	DHCP_PACKET(BYTE * mac, BYTE * req_id, BYTE * serv_ip);
 };
+
+void calc_ip_header_checksum(BYTE * addr);
+
+void calc_tcp_header_checksum(BYTE * addr);
+
+unsigned short calc_checksum(BYTE * addr, int len, unsigned short init_val, bool straight = false);
 
 #endif

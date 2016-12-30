@@ -5,7 +5,7 @@
 #include <vector>
 #include "Unapplied.hpp"
 #include <Winsock2.h>
-
+extern unsigned int current;
 
 C4_wpcap::C4_wpcap(const std::string & name)
 : alldevs(0), alldevs_count(0), curr_dev(0), open_dev(0)
@@ -85,116 +85,6 @@ int C4_wpcap::Set_Curr_Dev(const std::string & name)
 }
 
 //--------------------------
-
-int C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
-{
-	if (!Is_Open())
-	{
-		std::cout << "Interface is not open" << std::endl;
-		return 1;
-	}
-	//--------------------
-	// Create Network mask
-	//--------------------
-
-	int netmask = Get_Network_Mask();
-
-	//--------------------
-	// Compile filter
-	// Set filter
-	//--------------------
-
-	int status = Filter_Create("arp", netmask);
-	if (status)
-		return 1;
-
-	//--------------------
-	// Capturing
-	//--------------------
-
-	std::cout << "Capturing ARP replies" << std::endl;
-	std::cout << "MAC - IP" << std::endl;
-
-	struct pcap_pkthdr *header;
-	const u_char *pkt_data;
-	int res;
-	/* Retrieve the packets */
-	clock_t t = clock();
-	//Listen for 5 seconds
-	while (clock() - t < 3000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
-
-		if (res == 0)
-			/* Timeout elapsed */
-			continue;
-
-		// check for response
-		// 1 - request
-		// 2 - reply
-		if (*(pkt_data + 21) == 2)
-		{
-			// get mac and ip from packet data
-			std::string mac = conv_mac_bytes_to_str((unsigned char *)(pkt_data + 22));
-			std::string ip  = conv_ip4_bytes_to_str((unsigned char *)(pkt_data + 28));
-
-			if (mac_ip.insert(std::make_pair(mac, ip)).second == true)
-				std::cout << mac << " " << ip << std::endl;
-		}
-	}
-
-	return 0;
-}
-
-int C4_wpcap::Listen_SYNACK()
-{
-	if (!Is_Open())
-	{
-		std::cout << "Interface is not open" << std::endl;
-		return 1;
-	}
-	//--------------------
-	// Create Network mask
-	//--------------------
-
-	int netmask = Get_Network_Mask();
-
-	//--------------------
-	// Compile filter
-	// Set filter
-	//--------------------
-
-	int status = Filter_Create("tcp-syn", netmask);
-	if (status)
-		return 1;
-
-	//--------------------
-	// Capturing
-	//--------------------
-
-	std::cout << "SYN_ACK" << std::endl;
-
-	struct pcap_pkthdr *header;
-	const u_char *pkt_data;
-	int res;
-	/* Retrieve the packets */
-	clock_t t = clock();
-	//Listen for 5 seconds
-	while (clock() - t < 5000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
-
-		if (res == 0)
-			/* Timeout elapsed */
-			continue;
-
-		// src port 34 + 35
-		short src_port;
-		*((BYTE*)&src_port + 1) = *(pkt_data + 34);
-		*((BYTE*)&src_port + 0) = *(pkt_data + 35);
-
-		std::cout << "Open port: " << src_port << std::endl;
-	}
-
-	return 0;
-}
-
 
 void C4_wpcap::Free_Devices()
 {
@@ -277,6 +167,11 @@ bool C4_wpcap::Is_Open()
 	return open_dev != 0;
 }
 
+//-------------
+// ARP Sender
+// ARP Listener
+//-------------
+
 int C4_wpcap::ARP_Sender(BYTE * mac, BYTE * ip, const unsigned int netmask)
 {
 	ARP_PACKET raw(mac, ip);
@@ -312,10 +207,74 @@ int C4_wpcap::ARP_Sender(BYTE * mac, BYTE * ip, const unsigned int netmask)
 	return 0;
 }
 
+int C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
+{
+	if (!Is_Open())
+	{
+		std::cout << "Interface is not open" << std::endl;
+		return 1;
+	}
+	//--------------------
+	// Create Network mask
+	//--------------------
+
+	int netmask = Get_Network_Mask();
+
+	//--------------------
+	// Compile filter
+	// Set filter
+	//--------------------
+
+	int status = Filter_Create("arp", netmask);
+	if (status)
+		return 1;
+
+	//--------------------
+	// Capturing
+	//--------------------
+
+	std::cout << "Capturing ARP replies" << std::endl;
+	std::cout << "MAC - IP" << std::endl;
+
+	struct pcap_pkthdr *header;
+	const u_char *pkt_data;
+	int res;
+	/* Retrieve the packets */
+	clock_t t = clock();
+	//Listen for 5 seconds
+	while (clock() - t < 5000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
+
+		if (res == 0)
+			/* Timeout elapsed */
+			continue;
+
+		// check for response
+		// 1 - request
+		// 2 - reply
+		if (*(pkt_data + 21) == 2)
+		{
+			// get mac and ip from packet data
+			std::string mac = conv_mac_bytes_to_str((unsigned char *)(pkt_data + 22));
+			std::string ip = conv_ip4_bytes_to_str((unsigned char *)(pkt_data + 28));
+
+			if (mac_ip.insert(std::make_pair(mac, ip)).second == true)
+				std::cout << mac << " " << ip << std::endl;
+		}
+	}
+
+	return 0;
+}
+
+//----------------------
+// Port Scanner 
+// +
+// TCP[syn+ack] listener
+//----------------------
+
 /* need 2 addition values for port-range  */
 int C4_wpcap::TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, const BYTE * ip_dest, const BYTE * ip_src)
 {
-	TCP_PACKET raw(mac_dest, mac_src, ip_dest, ip_src, 7980); //create packet
+	TCP_PACKET raw(mac_dest, mac_src, ip_dest, ip_src, 0); //create packet
 
 	/*for (int i(0); i < sizeof(TCP_PACKET); i++)
 	{
@@ -327,7 +286,7 @@ int C4_wpcap::TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, cons
 	}*/
 
 	std::cout << sizeof(TCP_PACKET) << std::endl;
-	while (raw.Next_Port() < 8010)
+	while (raw.Next_Port() < 100)
 	{
 		if (pcap_sendpacket(open_dev, (BYTE*)&raw, sizeof(TCP_PACKET) /* size */) != 0)
 		{
@@ -339,9 +298,86 @@ int C4_wpcap::TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, cons
 	return 0;
 }
 
+int C4_wpcap::Listen_SYNACK()
+{
+	if (!Is_Open())
+	{
+		std::cout << "Interface is not open" << std::endl;
+		return 1;
+	}
+	//--------------------
+	// Create Network mask
+	//--------------------
+
+	int netmask = Get_Network_Mask();
+
+	//--------------------
+	// Compile filter
+	// Set filter
+	//--------------------
+
+	int status = Filter_Create("tcp src port 80", netmask);
+	if (status)
+		return 1;
+
+	//--------------------
+	// Capturing
+	//--------------------
+
+	std::cout << "SYN_ACK" << std::endl;
+
+	struct pcap_pkthdr *header;
+	const u_char *pkt_data;
+	int res;
+	/* Retrieve the packets */
+	clock_t t = clock();
+	//Listen for 5 seconds
+	int count = 0;
+	while (clock() - t < 10000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
+
+		count++;
+
+		if (res == 0)
+			/* Timeout elapsed */
+			continue;
+
+		printf("%d:\n", count);
+		for (int i = 0; i < 54; ++i)
+			printf("%2x ", pkt_data[i]);
+		printf("\n\n");
+
+		// src port 34 + 35
+		short src_port;
+		*((BYTE*)&src_port + 1) = *(pkt_data + 34);
+		*((BYTE*)&src_port + 0) = *(pkt_data + 35);
+
+		std::cout << "Open port: " << src_port << std::endl;
+	}
+
+	std::cout << "Cought " << count << " packets." << std::endl;
+
+	return 0;
+}
+
+//--------------
+// DHCP Sender
+// +
+// DHCP Listener
+//--------------
+
 int C4_wpcap::DHCP_Sender(BYTE * mac)
 {
-	DHCP_PACKET raw(mac); //create packet
+	BYTE * ipv4cl = new BYTE[4]; // get memory to ip4 src address
+	BYTE * ipv4serv = new BYTE[4]; // get memory to ip4 src address
+	conv_ip4_str_to_bytes(getInt(current)->IPaddress, ipv4cl); // convert and swap ip4src
+	memcpy(ipv4serv, ipv4cl, 4);
+	*(ipv4cl + 3) = 1;
+
+	DHCP_PACKET raw(mac, ipv4cl, ipv4serv); //create packet
+
+	delete[] ipv4cl;
+	delete[] ipv4serv;
+
 	std::cout << "sent " << sizeof(DHCP_PACKET) << " bytes." << std::endl;
 	if (pcap_sendpacket(open_dev, (BYTE*)&raw, sizeof(DHCP_PACKET) /* size */) != 0)
 	{
@@ -393,7 +429,7 @@ int C4_wpcap::Listen_DHCP()
 
 		// src port 34 + 35
 		int serv_ip = *(int *)(pkt_data + 311);
-		reverse_bytes((BYTE *)&serv_ip, 4);
+		//reverse_bytes((BYTE *)&serv_ip, 4);
 		
 		std::cout << "DHCP server: " << conv_ip4_bytes_to_str((BYTE *)&serv_ip) << std::endl;
 	}

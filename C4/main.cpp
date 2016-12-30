@@ -73,8 +73,6 @@ void dhcp_generator()
 
 void main(int argc, char* argv[])
 {
-	std::cout << "sizeof(DHCP_PACKET): " << sizeof(DHCP_PACKET) << ". Should be 314." << std::endl;
-
 	std::cout << "Interfaces list:" << std::endl;
 
 	getInterfacesList();
@@ -115,7 +113,6 @@ void main(int argc, char* argv[])
 
 
 	std::string command;
-	char c_command[256];
 
 	// port_scanner(); //pscan
 	bool ok = false;
