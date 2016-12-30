@@ -89,14 +89,12 @@ void TCP_PACKET::CALC_CHECKSUM()
 	*(unsigned short *)head_sum = 0;
 	*(unsigned short *)checksum = 0;
 
-	*(unsigned short *)&head_sum = calc_checksum(&ver_head, 20, 0, true);
+	*(unsigned short *)&head_sum = calc_checksum(&ver_head, 20, 0, false);
 
 	unsigned short sum = 0x1c + 0x06 + 4;
 	int len = tcp_head_len_and_flags[0] >> 2;
-	*(unsigned short *)&checksum = calc_checksum(src_ip, len + 8, sum, false);
-	
-	// calc_ip_header_checksum(reinterpret_cast<BYTE *>(this) + 14);
-	// calc_tcp_header_checksum(reinterpret_cast<BYTE *>(this) + 34);
+	*(unsigned short *)checksum = calc_checksum(src_ip, len + 8, sum, true);
+	reverse_bytes((BYTE *)checksum, 2);
 }
 
 //--------------------
@@ -132,7 +130,12 @@ DHCP_PACKET::DHCP_PACKET(BYTE * mac)
 	memset(transaction_id + 3, rand() % 256, 1);		// transaction id randomization
 
 	*(unsigned short *)head_sum = 0;
-	*(unsigned short *)&head_sum = calc_checksum(&ver_head, 20, 0, true);
+	*(unsigned short *)&head_sum = calc_checksum(&ver_head, 20, 0, false);
+	*(unsigned short *)udp_sum = 0;
+	*(unsigned short *)&udp_sum = calc_checksum(src_ip, 288, 0x129, true);
+	reverse_bytes(udp_sum, 2);
+
+
 	//calc_ip_header_checksum(reinterpret_cast<BYTE *>(this) + 14);
 }
 
@@ -174,84 +177,15 @@ DHCP_PACKET::DHCP_PACKET(BYTE * mac, BYTE * req_ip, BYTE * serv_ip)
 	memcpy(op_req_ip + 12, "\x37\x04\x01\x03\x06\x2a\xff\x00", 8);
 
 	*(unsigned short *)head_sum = 0;
-
-	*(unsigned short *)head_sum = calc_checksum(&ver_head, 20, 0, true);
-	//calc_ip_header_checksum(reinterpret_cast<BYTE *>(this) + 14);
+	*(unsigned short *)head_sum = calc_checksum(&ver_head, 20, 0, false);
+	*(unsigned short *)udp_sum = 0;
+	*(unsigned short *)&udp_sum = calc_checksum(src_ip, 288, 0x129, true);
+	reverse_bytes(udp_sum, 2);
 }
 
 //--------
 // Helpers
 //--------
-
-void calc_ip_header_checksum(BYTE * addr)
-{
-	
-	int len = 20;
-	long sum = 0;  /* assume 32 bit long, 16 bit short */
-	unsigned short *ip_header = (unsigned short *)addr;
-	ip_header[5] = 0;
-
-	while (len > 1){
-		sum += *((unsigned short*)ip_header)++;
-		if (sum & 0x80000000)   /* if high order bit set, fold */
-			sum = (sum & 0xFFFF) + (sum >> 16);
-		len -= 2;
-	}
-
-	if (len)       /* take care of left over byte */
-		sum += (unsigned short)*(unsigned char *)ip_header;
-
-	while (sum >> 16)
-		sum = (sum & 0xFFFF) + (sum >> 16);
-
-	unsigned short tmp = sum;
-	tmp = ~tmp;
-	((unsigned short *)addr)[5] = tmp;
-}
-
-void calc_tcp_header_checksum(BYTE * addr)
-{
-	int res = 0;
-	unsigned short word = 0;
-
-	*(short *)(addr + 16) = 0;
-
-	res += 0x1c;
-	res += 6;
-
-	for (int i = 0; i < 16; ++i)
-	{
-		*(BYTE *)&word = *(addr + i * 2 + 1);
-		*((BYTE *)&word + 1) = *(addr + i * 2);
-
-		res += word;
-		if (res > 0xffff)
-		{
-			res -= 0xffff;
-			res += 1;
-		}
-	}
-
-	for (int i = 0; i < 4; ++i)
-	{
-		*(BYTE *)&word = *(addr - 8 + i * 2 + 1);
-		*((BYTE *)&word + 1) = *(addr - 8 + i * 2);
-
-		res += word;
-		if (res > 0xffff)
-		{
-			res -= 0xffff;
-			res += 1;
-		}
-	}
-
-	word = res;
-	word = ~word;
-	*(addr + 16) = *((BYTE *)&word + 1);
-	*(addr + 17) = *(BYTE *)&word;
-
-	return;
-}
 
 unsigned short calc_checksum(BYTE * addr, int len, unsigned short init_val, bool straight)
 {
@@ -259,7 +193,7 @@ unsigned short calc_checksum(BYTE * addr, int len, unsigned short init_val, bool
 	unsigned short *ip_header = (unsigned short *)addr;
 
 	while (len > 1){
-		if (straight)
+		if (!straight)
 			sum += *((unsigned short*)ip_header)++;
 		else
 		{

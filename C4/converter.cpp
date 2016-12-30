@@ -95,7 +95,7 @@ BYTE * reverse_bytes(BYTE * arr, size_t size)
 		arr[right] ^= arr[left];
 		arr[left] ^= arr[right];
 		
-		left++;
+		left--;
 		right++;
 	}
 

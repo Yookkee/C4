@@ -119,7 +119,7 @@ int C4_wpcap::Filter_Create(std::string filter, int netmask)
 	//--------------------
 
 	struct bpf_program fcode;
-	if (pcap_compile(open_dev, &fcode, "arp", 1, netmask) < 0)
+	if (pcap_compile(open_dev, &fcode, filter.c_str(), 1, netmask) < 0)
 	{
 		fprintf(stderr, "\nUnable to compile the packet filter. Check the syntax.\n");
 		/* Free the device list */
@@ -373,7 +373,7 @@ int C4_wpcap::DHCP_Sender(BYTE * mac)
 	memcpy(ipv4serv, ipv4cl, 4);
 	*(ipv4cl + 3) = 1;
 
-	DHCP_PACKET raw(mac, ipv4cl, ipv4serv); //create packet
+	DHCP_PACKET raw(mac/*, ipv4cl, ipv4serv*/); //create packet
 
 	delete[] ipv4cl;
 	delete[] ipv4serv;
@@ -405,7 +405,7 @@ int C4_wpcap::Listen_DHCP()
 	// Set filter
 	//--------------------
 
-	int status = Filter_Create("port 67", netmask);
+	int status = Filter_Create("src port 67", netmask);
 	if (status)
 		return 1;
 
@@ -428,10 +428,15 @@ int C4_wpcap::Listen_DHCP()
 			continue;
 
 		// src port 34 + 35
-		int serv_ip = *(int *)(pkt_data + 311);
-		//reverse_bytes((BYTE *)&serv_ip, 4);
+		// for (int i = 0; i < 4; i++) std::cout << (int)*(pkt_data + 287 + i) << " ";
+		// std::cout << std::endl;
+		// unsigned int serv_ip = *(int *)(pkt_data + 287);
+
+		// reverse_bytes((BYTE *)&serv_ip, 4);
+
+		// reverse_bytes((BYTE *)&serv_ip, 4);
 		
-		std::cout << "DHCP server: " << conv_ip4_bytes_to_str((BYTE *)&serv_ip) << std::endl;
+		std::cout << "DHCP server: " << conv_ip4_bytes_to_str((BYTE *)(pkt_data + 287)) << std::endl;
 	}
 
 	return 0;
