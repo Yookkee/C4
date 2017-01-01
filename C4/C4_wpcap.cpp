@@ -253,10 +253,11 @@ int C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
 		// 2 - reply
 		if (*(pkt_data + 21) == 2)
 		{
-			// get mac and ip from packet data
+			// Get mac and ip addresses from packet data
 			std::string mac = conv_mac_bytes_to_str((unsigned char *)(pkt_data + 22));
 			std::string ip = conv_ip4_bytes_to_str((unsigned char *)(pkt_data + 28));
 
+			// Remember the data
 			if (mac_ip.insert(std::make_pair(mac, ip)).second == true)
 				std::cout << mac << " " << ip << std::endl;
 		}
@@ -275,15 +276,6 @@ int C4_wpcap::Listen_ARP(std::map<std::string, std::string> & mac_ip)
 int C4_wpcap::TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, const BYTE * ip_dest, const BYTE * ip_src)
 {
 	TCP_PACKET raw(mac_dest, mac_src, ip_dest, ip_src, 0); //create packet
-
-	/*for (int i(0); i < sizeof(TCP_PACKET); i++)
-	{
-		printf("%x ", *((BYTE*)&raw + i));
-		if ((i + 1) % 16 == 0)
-			std::cout << std::endl;
-		else if ((i + 1) % 8 == 0)
-			std::cout << "\t";
-	}*/
 
 	std::cout << sizeof(TCP_PACKET) << std::endl;
 	while (raw.Next_Port() < 4097)
@@ -335,6 +327,7 @@ int C4_wpcap::Listen_SYNACK()
 	clock_t t = clock();
 	//Listen for 5 seconds
 	int count = 0;
+	BYTE ttl = 0;
 	while (clock() - t < 10000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
 
 		if (res == 0)
@@ -343,19 +336,18 @@ int C4_wpcap::Listen_SYNACK()
 
 		count++;
 
-		/*printf("%d:\n", count);
-		for (int i = 0; i < 54; ++i)
-			printf("%2x ", pkt_data[i]);
-		printf("\n\n");*/
 
-		// src port 34 + 35
+		// Get src port ( offset 34 + 35 )
 		short src_port;
 		*((BYTE*)&src_port + 1) = *(pkt_data + 34);
 		*((BYTE*)&src_port + 0) = *(pkt_data + 35);
+		//remember ttl
+		ttl = *(pkt_data + 22);
 
 		std::cout << "Open port: " << src_port << std::endl;
 	}
 
+	std::cout << "Detected OS : " << (ttl == 0x80 ? "Windows." : "Unix.") << std::endl;
 	std::cout << "End of C4_wpcap::Listen_SYNACK" << std::endl;
 	std::cout << "Cought " << count << " packets." << std::endl;
 

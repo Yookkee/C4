@@ -6,21 +6,21 @@ typedef unsigned char BYTE;
 struct ARP_PACKET
 {
 	// Ethernet
-	BYTE mac_dest[6];
-	BYTE mac_src[6];
-	BYTE protocol[2];
+	BYTE mac_dest[6];	// Destination MAC address
+	BYTE mac_src[6];	// Source MAC address
+	BYTE protocol[2];	// Protocol (ARP)
 
 	// ARP
-	BYTE hard_type[2];
-	BYTE proto_type[2];
-	BYTE hard_size;
-	BYTE proto_size;
-	BYTE opcode[2];
+	BYTE hard_type[2];	// HARDWARE TYPE
+	BYTE proto_type[2];	// Protocol type
+	BYTE hard_size;		// Size of hardware identifier
+	BYTE proto_size;	// Size of protocol identifier
+	BYTE opcode[2];		// ARP opcode (1-request, 2-reply)
 
-	BYTE sender_mac[6];
-	BYTE sender_ip[4];
-	BYTE dest_mac[6];
-	BYTE dest_ip[4]; // 38-41
+	BYTE sender_mac[6];	// SOURCE MAC
+	BYTE sender_ip[4];	// SOURCE IP
+	BYTE dest_mac[6];	// DEST MAC
+	BYTE dest_ip[4];	// DEST IP
 
 	ARP_PACKET(const BYTE * _mac_src, const BYTE * _ip_src);
 };
