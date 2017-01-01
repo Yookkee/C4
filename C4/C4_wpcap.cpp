@@ -286,7 +286,7 @@ int C4_wpcap::TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, cons
 	}*/
 
 	std::cout << sizeof(TCP_PACKET) << std::endl;
-	while (raw.Next_Port() < 100)
+	while (raw.Next_Port() < 4097)
 	{
 		if (pcap_sendpacket(open_dev, (BYTE*)&raw, sizeof(TCP_PACKET) /* size */) != 0)
 		{
@@ -294,6 +294,8 @@ int C4_wpcap::TCP_Port_Scanner(const BYTE * mac_dest, const BYTE * mac_src, cons
 			return 1;
 		}
 	}
+
+	std::cout << "End of C4_wpcap::TCP_Port_Scanner" << std::endl;
 
 	return 0;
 }
@@ -316,7 +318,7 @@ int C4_wpcap::Listen_SYNACK()
 	// Set filter
 	//--------------------
 
-	int status = Filter_Create("tcp src port 80", netmask);
+	int status = Filter_Create("tcp[tcpflags] == (tcp-ack | tcp-syn)", netmask);
 	if (status)
 		return 1;
 
@@ -335,16 +337,16 @@ int C4_wpcap::Listen_SYNACK()
 	int count = 0;
 	while (clock() - t < 10000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
 
-		count++;
-
 		if (res == 0)
 			/* Timeout elapsed */
 			continue;
 
-		printf("%d:\n", count);
+		count++;
+
+		/*printf("%d:\n", count);
 		for (int i = 0; i < 54; ++i)
 			printf("%2x ", pkt_data[i]);
-		printf("\n\n");
+		printf("\n\n");*/
 
 		// src port 34 + 35
 		short src_port;
@@ -354,6 +356,7 @@ int C4_wpcap::Listen_SYNACK()
 		std::cout << "Open port: " << src_port << std::endl;
 	}
 
+	std::cout << "End of C4_wpcap::Listen_SYNACK" << std::endl;
 	std::cout << "Cought " << count << " packets." << std::endl;
 
 	return 0;
