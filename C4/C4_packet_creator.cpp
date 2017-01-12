@@ -183,6 +183,49 @@ DHCP_PACKET::DHCP_PACKET(BYTE * mac, BYTE * req_ip, BYTE * serv_ip)
 	reverse_bytes(udp_sum, 2);
 }
 
+//--------------------
+// NBNS Implementation
+//--------------------
+
+NBNS_PACKET::NBNS_PACKET(const BYTE * src_mac, const BYTE * dest_mac, const BYTE * src_ip, const BYTE * dest_ip)
+{
+	memset(this, 0x00, sizeof(NBNS_PACKET));
+
+	// eth
+	memcpy(eth_dest_mac, dest_mac, 6);
+	memcpy(eth_src_mac, src_mac, 6);
+	memcpy(eth_type, "\x08\x00", 2);
+
+	// ip
+	ip_ver_head = 0x45;
+	memcpy(ip_total_len + 1, "\x4e\x31\x13", 3);
+	ip_ttl = 128;
+	ip_protocol = 0x11;
+	memcpy(ip_src_ip, src_ip, 4);
+	memcpy(ip_dest_ip, dest_ip, 4);
+	
+	// udp
+	*(udp_src_port + 1) = *(udp_dest_port + 1) = 137;
+	*(udp_len + 1) = 0x3a;
+
+	// nbns
+	memcpy(nbns_trans_id, "\xe1\x4f\x00\x00\x00\x01", 6);
+	memcpy(nbns_queries, "\x20\x43\x4b", 3);
+	memset(nbns_queries + 3, 0x41, 30);
+	*(nbns_queries + 35) = 0x21;
+	*(nbns_queries + 37) = 0x01;
+
+	// checksums
+
+	*(unsigned short *)ip_checksum = 0;
+	*(unsigned short *)ip_checksum = calc_checksum(&ip_ver_head, 20, 0, true);
+	reverse_bytes(ip_checksum, 2);
+	*(unsigned short *)udp_checksum = 0;
+	*(unsigned short *)&udp_checksum = calc_checksum(ip_src_ip, 66, 0x4b, true);
+	reverse_bytes(udp_checksum, 2);
+}
+
+
 //--------
 // Helpers
 //--------

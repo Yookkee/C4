@@ -362,16 +362,7 @@ int C4_wpcap::Listen_SYNACK()
 
 int C4_wpcap::DHCP_Sender(BYTE * mac)
 {
-	BYTE * ipv4cl = new BYTE[4]; // get memory to ip4 src address
-	BYTE * ipv4serv = new BYTE[4]; // get memory to ip4 src address
-	conv_ip4_str_to_bytes(getInt(current)->IPaddress, ipv4cl); // convert and swap ip4src
-	memcpy(ipv4serv, ipv4cl, 4);
-	*(ipv4cl + 3) = 1;
-
-	DHCP_PACKET raw(mac/*, ipv4cl, ipv4serv*/); //create packet
-
-	delete[] ipv4cl;
-	delete[] ipv4serv;
+	DHCP_PACKET raw(mac); //create packet
 
 	std::cout << "sent " << sizeof(DHCP_PACKET) << " bytes." << std::endl;
 	if (pcap_sendpacket(open_dev, (BYTE*)&raw, sizeof(DHCP_PACKET) /* size */) != 0)
@@ -433,6 +424,104 @@ int C4_wpcap::Listen_DHCP()
 		
 		std::cout << "DHCP server: " << conv_ip4_bytes_to_str((BYTE *)(pkt_data + 287)) << std::endl;
 	}
+
+	return 0;
+}
+
+//--------------
+// NBNS Sender
+// +
+// NBNS Listener
+//--------------
+
+int C4_wpcap::NBNS_Sender(const BYTE * src_mac, const BYTE * dest_mac, const BYTE * src_ip, const BYTE * dest_ip)
+{
+	NBNS_PACKET raw(src_mac, dest_mac, src_ip, dest_ip);
+
+	std::cout << "sent " << sizeof(NBNS_PACKET) << " bytes." << std::endl;
+	if (pcap_sendpacket(open_dev, (BYTE*)&raw, sizeof(NBNS_PACKET) /* size */) != 0)
+	{
+		fprintf(stderr, "\nError sending the packet: %s\n", pcap_geterr(open_dev));
+		return 1;
+	}
+	return 0;
+}
+
+int C4_wpcap::NBNS_Listener()
+{
+	if (!Is_Open())
+	{
+		std::cout << "Interface is not open" << std::endl;
+		return 1;
+	}
+	//--------------------
+	// Create Network mask
+	//--------------------
+
+	int netmask = Get_Network_Mask();
+
+	//--------------------
+	// Compile filter
+	// Set filter
+	//--------------------
+
+	int status = Filter_Create("udp port 137", netmask);
+	if (status)
+		return 1;
+
+	//--------------------
+	// Capturing
+	//--------------------
+
+	//std::cout << "SYN_ACK" << std::endl;
+
+	struct pcap_pkthdr *header;
+	const u_char *pkt_data;
+	int res;
+	/* Retrieve the packets */
+	clock_t t = clock();
+	//Listen for 5 seconds
+	int count = 0;
+	BYTE ttl = 0;
+	while (clock() - t < 3000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
+
+		if (res == 0)
+			/* Timeout elapsed */
+			continue;
+
+		if (*(pkt_data + 49) != 1)
+			/* Timeout elapsed */
+			continue;
+
+		count++;
+
+
+		BYTE * names = (BYTE *)pkt_data + 98;
+		for (int i = 0; i < *names; ++i)
+		{
+			BYTE * name = names + 1 + i * 18;
+			std::string res = "";
+
+			for (int j = 0; j < 16; ++j)
+			{
+				if (*(name + j) == 20)
+					break;
+
+				res += *(name + j);
+			}
+
+			if (*(name + 16) & 0x80)
+				res += " unique name.";
+			else
+				res += " group name.";
+
+			std::cout << res << std::endl;
+		}
+	}
+
+	// std::cout << "Detected OS : " << (ttl == 0x80 ? "Windows." : "Unix.") << std::endl;
+	std::cout << "End of C4_wpcap::NBNS_Listener()." << std::endl;
+	std::cout << "Cought " << count << " packets." << std::endl;
 
 	return 0;
 }

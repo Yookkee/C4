@@ -106,6 +106,51 @@ struct DHCP_PACKET
 	DHCP_PACKET(BYTE * mac, BYTE * req_id, BYTE * serv_ip);
 };
 
+struct NBNS_PACKET
+{
+	//--------
+	// Fields
+	//--------
+
+	// Ethernet
+	BYTE eth_dest_mac[6];
+	BYTE eth_src_mac[6];
+	BYTE eth_type[2];
+
+	// IPv4
+	BYTE ip_ver_head;
+	BYTE ip_diff_serv_field;
+	BYTE ip_total_len[2];
+	BYTE ip_id[2];
+	BYTE ip_flags_offset[2];
+	BYTE ip_ttl;
+	BYTE ip_protocol;
+	BYTE ip_checksum[2];
+	BYTE ip_src_ip[4];
+	BYTE ip_dest_ip[4];
+
+	// UDP
+	BYTE udp_src_port[2];
+	BYTE udp_dest_port[2];
+	BYTE udp_len[2];
+	BYTE udp_checksum[2];
+
+	// NBNS
+	BYTE nbns_trans_id[2];
+	BYTE nbns_flags[2];
+	BYTE nbns_questions[2];
+	BYTE nbns_answer_rrs[2];
+	BYTE nbns_authority_rrs[2];
+	BYTE nbns_additional_rrs[2];
+	BYTE nbns_queries[38];
+
+	//--------
+	// Methods
+	//--------
+	NBNS_PACKET(const BYTE * src_mac, const BYTE * dest_mac, const BYTE * src_ip, const BYTE * dest_ip);
+};
+
+
 void calc_ip_header_checksum(BYTE * addr);
 
 void calc_tcp_header_checksum(BYTE * addr);
