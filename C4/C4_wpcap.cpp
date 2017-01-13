@@ -5,6 +5,7 @@
 #include <vector>
 #include "Unapplied.hpp"
 #include <Winsock2.h>
+#include <set>
 extern unsigned int current;
 
 C4_wpcap::C4_wpcap(const std::string & name)
@@ -318,8 +319,6 @@ int C4_wpcap::Listen_SYNACK()
 	// Capturing
 	//--------------------
 
-	std::cout << "SYN_ACK" << std::endl;
-
 	struct pcap_pkthdr *header;
 	const u_char *pkt_data;
 	int res;
@@ -328,6 +327,9 @@ int C4_wpcap::Listen_SYNACK()
 	//Listen for 5 seconds
 	int count = 0;
 	BYTE ttl = 0;
+
+	std::set<short> open_ports;
+
 	while (clock() - t < 10000 && (res = pcap_next_ex(open_dev, &header, &pkt_data)) >= 0){
 
 		if (res == 0)
@@ -341,15 +343,17 @@ int C4_wpcap::Listen_SYNACK()
 		short src_port;
 		*((BYTE*)&src_port + 1) = *(pkt_data + 34);
 		*((BYTE*)&src_port + 0) = *(pkt_data + 35);
+		open_ports.insert(src_port);
 		//remember ttl
 		ttl = *(pkt_data + 22);
-
-		std::cout << "Open port: " << src_port << std::endl;
 	}
+
+	for (auto it = open_ports.begin(); it != open_ports.end(); ++it)
+		std::cout << "Open port: " << *it << std::endl;
 
 	std::cout << "Detected OS : " << (ttl == 0x80 ? "Windows." : "Unix.") << std::endl;
 	std::cout << "End of C4_wpcap::Listen_SYNACK" << std::endl;
-	std::cout << "Cought " << count << " packets." << std::endl;
+	// std::cout << "Cought " << count << " packets." << std::endl;
 
 	return 0;
 }

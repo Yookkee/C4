@@ -194,6 +194,16 @@ void main(int argc, char* argv[])
 				}
 			}
 		}
+		else if (command.find("help") == 0)
+		{
+			std::cout << "Help message:" << std::endl;
+			std::cout << "help" << std::endl;
+			std::cout << "\tTo see this help message." << std::endl;
+			std::cout << "pscan <ipv4>" << std::endl;
+			std::cout << "\tScan open tcp ports on a device with specified ip address." << std::endl;
+			std::cout << "nbns <ipv4>" << std::endl;
+			std::cout << "\tName resolution on a device with specified ip address." << std::endl;
+		}
 	}
 
 	//port_scanner(); //pscan
